@@ -1,0 +1,128 @@
+/* eslint-disable */
+import Config from '../../config';
+import Guid from 'guid';
+
+const getAuthentificationToken = () => {
+const user = JSON.parse(localStorage.getItem('user'));
+
+return user.token.accessToken;
+};
+
+const serializeQueryParams = (parameters) => {
+let str = [];
+for (let p in parameters) {
+if (parameters.hasOwnProperty(p)) {
+str.push(encodeURIComponent(p) + '=' + encodeURIComponent(parameters[p]));
+}
+}
+return str.join('&');
+};
+
+const mergeQueryParams = (parameters, queryParameters) => {
+if (parameters.$queryParameters) {
+Object.keys(parameters.$queryParameters)
+.forEach(function(parameterName) {
+{{#isES6}}let{{/isES6}}{{^isES6}}var{{/isES6}} parameter = parameters.$queryParameters[parameterName];
+queryParameters[parameterName] = parameter;
+});
+}
+return queryParameters;
+};
+
+{{#isSecure}}
+    {{#isSecureToken}}
+        /**
+        * Set Token
+        * @method
+        * @name setToken
+        * @param {string} value - token's value
+        * @param {string} headerOrQueryName - the header or query name to send the token at
+        * @param {boolean} isQuery - true if send the token as query param, otherwise, send as header param
+        */
+        const setToken = (value, headerOrQueryName, isQuery) => {
+        // TODO do this based on redux reducers
+        Config.TOKEN.value = value;
+        Config.TOKEN.headerOrQueryName = headerOrQueryName;
+        config.TOKEN.isQuery = isQuery;
+        };
+    {{/isSecureToken}}
+    {{#isSecureApiKey}}
+        /**
+        * Set Api Key
+        * @method
+        * @name {{&className}}#setApiKey
+        * @param {string} value - apiKey's value
+        * @param {string} headerOrQueryName - the header or query name to send the apiKey at
+        * @param {boolean} isQuery - true if send the apiKey as query param, otherwise, send as header param
+        */
+        const setApiKey = (value, headerOrQueryName, isQuery) => {
+        apiKey.value = value;
+        apiKey.headerOrQueryName = headerOrQueryName;
+        apiKey.isQuery = isQuery;
+        };
+    {{/isSecureApiKey}}
+    {{#isSecureBasic}}
+        /**
+        * Set Basic Auth
+        * @method
+        * @name {{&className}}#setBasicAuth
+        * @param {string} username
+        * @param {string} password
+        */
+        const setBasicAuth = (username, password) => {
+        // TODO do this based on redux reducers
+        basic.username = value;
+        basic.password = password;
+        };
+    {{/isSecureBasic}}
+    /**
+    * Set Auth headers
+    * @method
+    * @name {{&className}}#setAuthHeaders
+    * @param {object} headerParams - headers object
+    */
+    const setAuthHeaders = (headerParams) => {
+    let headers = headerParams ? headerParams : {};
+    {{#isSecureToken}}
+        // TODO do this based on redux reducers
+        if (!Config.token.isQuery) {
+        if (Config.token.headerOrQueryName) {
+        headers[Config.token.headerOrQueryName] = Config.token.value;
+        } else if (Config.token.value) {
+        headers['Authorization'] = 'Bearer ' + Config.token.value;
+        }
+        }
+    {{/isSecureToken}}
+    {{#isSecureApiKey}}
+        if (!Config.apiKey.isQuery && Config.apiKey.headerOrQueryName) {
+        headers[Config.apiKey.headerOrQueryName] = Config.apiKey.value;
+        }
+    {{/isSecureApiKey}}
+    {{#isSecureBasic}}
+        // TODO do this based on redux reducers
+        if (this.basic.username && this.basic.password) {
+        headers['Authorization'] = 'Basic ' + btoa(basic.username + ':' + basic.password);
+        }
+    {{/isSecureBasic}}
+    return headers;
+    };
+{{/isSecure}}
+
+{{#methods}}
+    {{> method}}
+{{/methods}}
+
+/**
+* {{&description}}
+* @class {{&className}}
+* @param {(string|object)} [domainOrOptions] - The project domain or options object. If object, see the object's optional properties.
+* @param {string} [domainOrOptions.domain] - The project domain
+* @param {object} [domainOrOptions.token] - auth token - object with value property and optional headerOrQueryName and isQuery properties
+*/
+const {{&className}} = {
+{{#methods}}
+    {{&methodName}},
+{{/methods}}
+};
+
+export default {{&className}};

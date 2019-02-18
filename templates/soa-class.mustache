@@ -1,0 +1,164 @@
+/* eslint dot-notation: 0 */
+/* eslint strict: 0 */
+/* eslint no-trailing-spaces: 0 */
+/* eslint no-unused-vars: 0 */
+/* eslint camelcase: 0 */
+/* jshint esversion: 6 */
+
+'use strict';
+
+import q from 'q';
+import 'whatwg-fetch';
+{{#isSecureBasic}}
+import btoa from 'btoa';
+{{/isSecureBasic}}
+import Config from '../../config/config';
+import RSIApiConfig from '../../lib/RSIApiConfig';
+import {getAccessToken,} from '../../store/reactStore';
+
+/**
+* {{&description}}
+* @class {{&className}}
+* @param {(string|object)} [domainOrOptions] - The project domain or options object. If object, see the object's optional properties.
+* @param {string} [domainOrOptions.domain] - The project domain
+* @param {object} [domainOrOptions.token] - auth token - object with value property and optional headerOrQueryName and isQuery properties
+*/
+
+const _serializeQueryParams = (parameters) => {
+let str = [];
+Object.keys(parameters).forEach((p) => {
+if (Object.prototype.hasOwnProperty.call(parameters, p)) {
+str.push(`${encodeURIComponent(p)}=${encodeURIComponent(parameters[p])}`);
+}
+});
+return str.join('&');
+};
+
+const _mergeQueryParams = (parameters, queryParameters) => {
+let query = queryParameters;
+if (parameters.$queryParameters) {
+Object.keys(parameters.$queryParameters)
+.forEach((parameterName) => {
+query[parameterName] = parameters.$queryParameters[parameterName];
+});
+}
+return query;
+};
+
+/**
+* HTTP Request
+* @method
+* @name request
+* @param {object} params - Parameters for api calls
+* @param {string} params.method - http method
+* @param {string} params.url - url to do request
+* @param {object} params.parameters
+* @param {object} params.body - body parameters / object
+* @param {object} params.headers - header parameters
+* @param {object} params.queryParameters - querystring parameters
+* @param {object} params.form - form data object
+* @param {object} params.deferred - promise object
+*/
+const _request = ({method, url, body, headers, queryParameters, form, deferred,}) => {
+const queryParams = queryParameters && Object.keys(queryParameters).length ? _serializeQueryParams(queryParameters) : null ;
+const urlWithParams = `${url}${(queryParams ? `?${queryParams}` : '')}`;
+
+fetch(urlWithParams, {
+method,
+headers,
+body: method !== 'GET' && method !== 'HEAD' ? JSON.stringify(body) : undefined,
+form,
+}).then((response) => {
+if (response.status >= 400) {
+return deferred.reject(response);
+}
+
+return response.json();
+}).then((responseBody) => {
+deferred.resolve(responseBody);
+}).catch((error) => {
+deferred.reject(error);
+});
+};
+
+
+{{#isSecure}}
+    {{#isSecureToken}}
+        /**
+        * Set Token
+        * @method
+        * @name _setToken
+        * @param {string} value - token's value
+        * @param {string} headerOrQueryName - the header or query name to send the token at
+        * @param {boolean} isQuery - true if send the token as query param, otherwise, send as header param
+        */
+        const _setToken = (value, headerOrQueryName, isQuery) => {
+        this.token.value = value;
+        this.token.headerOrQueryName = headerOrQueryName;
+        this.token.isQuery = isQuery;
+        };
+    {{/isSecureToken}}
+    {{#isSecureApiKey}}
+        /**
+        * Set Api Key
+        * @method
+        * @name _setApiKey
+        * @param {string} value - apiKey's value
+        * @param {string} headerOrQueryName - the header or query name to send the apiKey at
+        * @param {boolean} isQuery - true if send the apiKey as query param, otherwise, send as header param
+        */
+        // const _setApiKey = (value, headerOrQueryName, isQuery) => {
+        // this.apiKey.value = value;
+        // this.apiKey.headerOrQueryName = headerOrQueryName;
+        // this.apiKey.isQuery = isQuery;
+        // };
+    {{/isSecureApiKey}}
+    {{#isSecureBasic}}
+        /**
+        * Set Basic Auth
+        * @method
+        * @name _setBasicAuth
+        * @param {string} username
+        * @param {string} password
+        */
+        const _setBasicAuth = (username, password) => {
+        this.basic.username = username;
+        this.basic.password = password;
+        };
+    {{/isSecureBasic}}
+    /**
+    * Set Auth headers
+    * @method
+    * @name _setAuthHeaders
+    * @param {object} headerParams - headers object
+    */
+    /*
+    const _setAuthHeaders = (headerParams = {}) => {
+    let headers = headerParams;
+    {{#isSecureToken}}
+        if (!this.token.isQuery) {
+        if (this.token.headerOrQueryName) {
+        headers[this.token.headerOrQueryName] = this.token.value;
+        } else if (this.token.value) {
+        headers['Authorization'] = 'Bearer ' + this.token.value;
+        }
+        }
+    {{/isSecureToken}}
+    {{#isSecureApiKey}}
+        if (!this.apiKey.isQuery && this.apiKey.headerOrQueryName) {
+        headers[this.apiKey.headerOrQueryName] = this.apiKey.value;
+        }
+    {{/isSecureApiKey}}
+    {{#isSecureBasic}}
+        if (this.basic.username && this.basic.password) {
+        headers['Authorization'] = 'Basic ' + btoa(this.basic.username + ':' + this.basic.password);
+        }
+    {{/isSecureBasic}}
+    return headers;
+    };
+    */
+{{/isSecure}}
+
+{{#methods}}
+    {{> method}}
+{{/methods}}

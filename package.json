@@ -1,0 +1,22 @@
+{
+  "name": "smart-connect-portal",
+  "version": "1.0.0",
+  "description": "Smart connect portal web app",
+  "main": "index.js",
+  "scripts": {
+    "get-swagger-file": "node swagger-codegen/scripts/get-swagger.js",
+    "generate-client": "node swagger-codegen/scripts/gen-client.js",
+    "generate-model": "node swagger-codegen/scripts/gen-model.js ES6",
+    "generate-immutable": "node swagger-codegen/scripts/gen-model.js"
+  },
+  "author": "Computer Rock",
+  "license": "ISC",
+  "dependencies": {
+    "moment": "^2.22.2",
+  },
+  "devDependencies": {
+    "fs": "0.0.1-security",
+    "fs-extra": "^5.0.0",
+    "swagger-js-codegen": "^1.12.0",
+  }
+}

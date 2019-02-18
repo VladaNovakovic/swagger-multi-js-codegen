@@ -1,0 +1,87 @@
+import Immutable from 'immutable';
+{{#includes}}
+import {{&name}}Imm from '{{&path}}';
+{{/includes}}
+
+/**
+ * {{&className}}DTO definition
+ *
+ * @typedef {Object} {{&className}}DTO
+{{#properties}}
+ * @property { {{^isMandatory}}?{{/isMandatory}}{{&type}} } {{&name}}
+{{/properties}}
+ *
+ */
+
+/**
+ * {{&className}} definition
+ *
+ * @typedef {Immutable.Record} {{&className}}
+{{#properties}}
+ * @property { {{^isMandatory}}?{{/isMandatory}}{{&type}} } {{&name}}
+{{/properties}}
+ *
+ */
+
+/**
+ * {{&className}} record
+ *
+ * @type { {{&className}} }
+ */
+export default class {{&className}} extends Immutable.Record({
+{{#properties}}
+    {{&name}}: null,
+{{/properties}}
+}) {
+
+    constructor(data = {}) {
+        super({
+            ...{{&className}}.fromDTO(data)
+        });
+    }
+
+   /**
+     * Set values from data transfer object
+     *
+     * @param { {{&className}}DTO } dataTransferObject
+     * @return { {{&className}} }
+     */
+    fromDTO(data = {}) {
+        return new this.constructor({
+            ...this.toJS(),
+            ...{{&className}}.fromDTO(data)
+        });
+    }
+
+    static fromDTO(dataTransferObject, models = {}) {
+        {{#includes}}
+            const {{&name}} =  models['{{&name}}']
+            ? models['{{&name}}']
+            : {{&name}}Imm;
+        {{/includes}}
+
+
+        return {
+{{#properties}}
+            {{^isArray}}
+            {{&name}}: typeof dataTransferObject.{{&name}} !== 'undefined' && dataTransferObject.{{&name}}
+            ? {{^isCustomProperty}}dataTransferObject.{{&name}}{{/isCustomProperty}}{{#isCustomProperty}}new {{&type}}({}).fromDTO(dataTransferObject.{{&name}}){{/isCustomProperty}}
+            : this.{{&name}},
+            {{/isArray}}
+            {{#isArray}}
+            {{&name}}: typeof dataTransferObject.{{&name}} !== 'undefined' ?
+                {{^arrayItem.isCustomProperty}}
+                Immutable.List(dataTransferObject.{{&name}})
+                {{/arrayItem.isCustomProperty}}
+                {{#arrayItem.isCustomProperty}}
+                Immutable.List(dataTransferObject.{{&name}}
+                ? dataTransferObject.{{&name}}.map(elementDTO => {
+                return new {{&arrayItem.type}}({}).fromDTO(elementDTO); })
+                : [])
+                {{/arrayItem.isCustomProperty}}
+            : this.{{&name}},
+            {{/isArray}}
+{{/properties}}
+        };
+    }
+}

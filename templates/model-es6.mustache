@@ -1,0 +1,21 @@
+{{#includes}}
+import {{&name}} from '{{&path}}';
+{{/includes}}
+/**
+ * {{&className}} definition
+ *
+ * @typedef {{&className}}
+{{#properties}}
+ * @property { {{^isMandatory}}?{{/isMandatory}}{{#isArray}}Array<{{/isArray}}{{&type}}{{#isArray}}>{{/isArray}} } {{&name}}
+{{/properties}}
+ *
+ */
+export default class {{&className}} {
+  constructor({{#properties}}{{&name}}{{^isLast}}, {{/isLast}}{{/properties}}) {
+{{#properties}}
+    this.{{&name}} = {{^isArray}}{{^isCustomProperty}}{{&name}};{{/isCustomProperty}}{{#isCustomProperty}}new {{&type}}(...{{&name}});{{/isCustomProperty}}{{/isArray}}{{#isArray}}{{^arrayItem.isCustomProperty}}new Array(...{{&name}});{{/arrayItem.isCustomProperty}}{{#arrayItem.isCustomProperty}}{{&name}}.map((element, index) => {
+           return new {{&arrayItem.type}}(...element);
+        });{{/arrayItem.isCustomProperty}}{{/isArray}}
+{{/properties}}
+  }
+};

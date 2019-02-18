@@ -1,0 +1,122 @@
+/**
+* {{&summary}}
+* @method
+* @name {{&className}}#{{&methodName}}
+* @param {object} parameters - method options and parameters
+{{#parameters}}
+    {{^isSingleton}} * @param {{=<% %>=}}{<%&type%>}<%={{ }}=%> parameters.{{&camelCaseName}} - {{&description}}{{/isSingleton}}
+{{/parameters}}
+*/
+const {{&methodName}} = (parameters) => {
+if(parameters === undefined) {
+parameters = {};
+}
+parameters['guid'] = Guid.raw();
+
+{{#isES6}}let{{/isES6}}{{^isES6}}var{{/isES6}} path = '{{&path}}';
+{{#isES6}}let{{/isES6}}{{^isES6}}var{{/isES6}} body = undefined, queryParameters = {}, headers = {}, form = {};
+
+{{#isSecure}}
+    // headers = setAuthHeaders(headers);
+    headers['Authorization'] = `Bearer ${getAuthentificationToken()}`;
+{{/isSecure}}
+{{#headers}}
+    headers['{{&name}}'] = [{{&value}}];
+{{/headers}}
+
+return new Promise((resolve, reject) => {
+{{#parameters}}
+    {{#isQueryParameter}}
+        {{#isSingleton}}
+            queryParameters['{{&name}}'] = '{{&singleton}}';
+        {{/isSingleton}}
+        {{^isSingleton}}
+            {{#isPatternType}}
+                Object.keys(parameters).forEach(function(parameterName) {
+                if(new RegExp('{{&pattern}}').test(parameterName)){
+                queryParameters[parameterName] = parameters[parameterName];
+                }
+                });
+            {{/isPatternType}}
+            {{#default}}
+                /** set default value **/
+                parameters['{{&name}}'] = '{{&default}}';
+            {{/default}}
+
+            {{^isPatternType}}
+                if(parameters['{{&camelCaseName}}'] !== undefined){
+                queryParameters['{{&name}}'] = parameters['{{&camelCaseName}}'];
+                }
+            {{/isPatternType}}
+        {{/isSingleton}}
+    {{/isQueryParameter}}
+
+    {{#isPathParameter}}
+        if(parameters['{{&camelCaseName}}'] !== undefined){
+        path = path.replace('{{=<% %>=}}{<%&name%>}<%={{ }}=%>', parameters['{{&camelCaseName}}']);
+        } else {
+        reject(new Error('Missing required path parameter: {{&camelCaseName}}'));
+        }
+    {{/isPathParameter}}
+
+    {{#isHeaderParameter}}
+        {{#isSingleton}}
+            headers['{{&name}}'] = '{{&singleton}}';
+        {{/isSingleton}}
+        {{^isSingleton}}
+            if(parameters['{{&camelCaseName}}'] !== undefined){
+            headers['{{&name}}'] = parameters['{{&camelCaseName}}'];
+            }
+        {{/isSingleton}}
+    {{/isHeaderParameter}}
+
+    {{#isBodyParameter}}
+        if(parameters['{{&camelCaseName}}'] !== undefined){
+        body = parameters['{{&camelCaseName}}'];
+        }
+    {{/isBodyParameter}}
+
+    {{#isFormParameter}}
+        {{#isSingleton}}
+            form['{{&name}}'] = '{{&singleton}}';
+        {{/isSingleton}}
+        {{^isSingleton}}
+            if(parameters['{{&camelCaseName}}'] !== undefined){
+            form['{{&name}}'] = parameters['{{&camelCaseName}}'];
+            }
+        {{/isSingleton}}
+    {{/isFormParameter}}
+
+    {{#required}}
+        if(parameters['{{&camelCaseName}}'] === undefined){
+        reject(new Error('Missing required {{&paramType}} parameter: {{&camelCaseName}}'));
+        }
+    {{/required}}
+
+{{/parameters}}
+queryParameters = mergeQueryParams(parameters, queryParameters);
+
+const queryParams = queryParameters && Object.keys(queryParameters).length ? serializeQueryParams(queryParameters) : null ;
+const urlWithParams = Config.RSI_API_DOMAIN + path + (queryParams ? `?${queryParams}` : '');
+
+fetch(urlWithParams, {
+method: '{{method}}',
+headers,
+body: JSON.stringify(body)
+})
+.then(response => {
+if (response.status >= 200 && response.status < 300) {
+if (response.status === 204) {
+resolve({});
+} else {
+resolve(response.json());
+}
+} else {
+reject(Error(response.statusText !== '' ? response.statusText : response.status));
+}
+})
+.catch(error => {
+reject(error);
+});
+});
+};

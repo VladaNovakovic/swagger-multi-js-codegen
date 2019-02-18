@@ -1,0 +1,107 @@
+/**
+* {{&summary}}
+* @method
+* @name {{&methodName}}
+* @param {object} parameters - method options and parameters
+{{#parameters}}
+    {{^isSingleton}} * @param {{=<% %>=}}{<%&type%>}<%={{ }}=%> parameters.{{&camelCaseName}} - {{&description}}{{/isSingleton}}
+{{/parameters}}
+*/
+export const {{&methodName}} = (parameters = {}) => {
+let deferred = q.defer();
+let body = {};
+let queryParameters = {};
+let headers = {};
+let form = {};
+let endpoint = `${Config.RSI_API_DOMAIN}{{&path}}`;
+{{#isPathParameter}}
+    endpoint = endpoint.replace('{{=<% %>=}}{<%&name%>}<%={{ }}=%>', parameters['{{&camelCaseName}}']);
+{{/isPathParameter}}
+
+{{#isSecure}}
+    headers['Authorization'] = `Bearer ${getAccessToken()}`;
+{{/isSecure}}
+{{#headers}}
+    headers['{{&name}}'] = {{&value}};
+{{/headers}}
+
+{{#parameters}}
+    {{#isQueryParameter}}
+        {{#isSingleton}}
+            queryParameters['{{&name}}'] = '{{&singleton}}';
+        {{/isSingleton}}
+        {{^isSingleton}}
+            {{#isPatternType}}
+                Object.keys(parameters).forEach(function(parameterName) {
+                if(new RegExp('{{&pattern}}').test(parameterName)){
+                queryParameters[parameterName] = parameters[parameterName];
+                }
+                });
+            {{/isPatternType}}
+            {{#default}}
+                /**
+                 * set default value
+                 */
+                queryParameters['{{&name}}'] = '{{&default}}';
+            {{/default}}
+
+            {{^isPatternType}}
+                if(parameters['{{&camelCaseName}}'] !== undefined){
+                queryParameters['{{&name}}'] = parameters['{{&camelCaseName}}'];
+                }
+            {{/isPatternType}}
+        {{/isSingleton}}
+    {{/isQueryParameter}}
+
+    {{#isHeaderParameter}}
+        {{#isSingleton}}
+            headers['{{&name}}'] = '{{&singleton}}';
+        {{/isSingleton}}
+        {{^isSingleton}}
+            headers['{{&name}}'] = RSIApiConfig.{{&camelCaseName}}();
+        {{/isSingleton}}
+    {{/isHeaderParameter}}
+
+    {{#isBodyParameter}}
+        if(parameters['{{&camelCaseName}}'] !== undefined){
+        body = parameters['{{&camelCaseName}}'];
+        }
+    {{/isBodyParameter}}
+
+    {{#isFormParameter}}
+        {{#isSingleton}}
+            form['{{&name}}'] = '{{&singleton}}';
+        {{/isSingleton}}
+        {{^isSingleton}}
+            if(parameters['{{&camelCaseName}}'] !== undefined){
+            form['{{&name}}'] = parameters['{{&camelCaseName}}'];
+            }
+        {{/isSingleton}}
+    {{/isFormParameter}}
+
+    {{#required}}
+        endpoint = endpoint.replace('{{=<% %>=}}{<%&name%>}<%={{ }}=%>', parameters['{{&camelCaseName}}']);
+
+        {{^isHeaderParameter}}
+        if(parameters['{{&camelCaseName}}'] === undefined){
+        deferred.reject(new Error('Missing required {{&paramType}} parameter: {{&camelCaseName}}'));
+        return deferred.promise;
+        }
+        {{/isHeaderParameter}}
+    {{/required}}
+
+{{/parameters}}
+queryParameters = _mergeQueryParams(parameters, queryParameters);
+
+_request({
+    method: '{{method}}',
+    url: endpoint,
+    body,
+    headers,
+    queryParameters,
+    form,
+    deferred,
+});
+
+return deferred.promise;
+};
